@@ -9,6 +9,10 @@ Created on 04/21/2020
 import os
 import numpy as np
 import cv2
+import tensorflow as tf
+import data_input
+from slim import slim
+from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 
 # format activation and weight to get heatmap
@@ -87,3 +91,35 @@ def CAM(net, w, pred, x, path, name, bs, rd=0):
             # cv2.imwrite(imname1, a)
             # cv2.imwrite(imname2, b)
             cv2.imwrite(imname3, full)
+
+
+if __name__ == "__main__":
+    filename = '../Results/test.tfrecords'
+    datasets = data_input.DataSet(100, filename=filename)
+    itr, file, ph = datasets.data()
+    next_element = itr.get_next()
+
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+        sess.run(itr.initializer, feed_dict={ph: file})
+        saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
+        saver.restore(sess, '../model/model.ckpt-31500')
+        # print(sess.run('logits/logits/weights:0'))
+        print_tensors_in_checkpoint_file(file_name='../model/model.ckpt-31500', tensor_name='',
+                                         all_tensors=False, all_tensor_names=False)
+        # graph = tf.get_default_graph()
+        # x = sess.run(next_element)
+        # feed_dict = {images: x, num_classes: 2}
+
+        # with slim.arg_scope([slim.ops.conv2d, slim.ops.fc], weight_decay=0.00004):
+        #     with slim.arg_scope([slim.ops.conv2d],
+        #                         stddev=0.1,
+        #                         activation=tf.nn.relu,
+        #                         batch_norm_params={'decay': 0.9997, 'epsilon': 0.001}):
+        #         logits, endpoints, net2048, sel_endpoints = slim.inception.inception_v3(
+        #               x,
+        #               dropout_keep_prob=0.8,
+        #               num_classes=2,
+        #               is_training=False,
+        #               restore_logits=True,
+        #               scope=None)
+
