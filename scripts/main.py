@@ -164,6 +164,7 @@ if __name__ == "__main__":
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
+            # saver = tf.train.Saver(tf.all_variables(), reshape=True)
             saver.restore(sess, '../model/model.ckpt-31500')
             # x_in = tf.convert_to_tensor(x)
             net2048_, end_points_, logits_, x_= sess.run([logits, end_points, net2048, x_in_reshape], {x_in: x})
