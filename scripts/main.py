@@ -120,7 +120,7 @@ def inference(images, num_classes, for_training=False, restore_logits=True,
                         stddev=0.1,
                         activation=tf.nn.relu,
                         batch_norm_params={'decay': 0.9997, 'epsilon': 0.001}):
-      logits, endpoints, net2048, sel_endpoints = slim.inception.inception_v3(
+      logits, endpoints, net2048, sel_endpoints, netts = slim.inception.inception_v3(
           images,
           dropout_keep_prob=0.8,
           num_classes=num_classes,
@@ -132,7 +132,7 @@ def inference(images, num_classes, for_training=False, restore_logits=True,
   auxiliary_logits = endpoints['aux_logits']
 
   #return logits, auxiliary_logits
-  return logits, auxiliary_logits, endpoints, net2048, sel_endpoints
+  return logits, auxiliary_logits, endpoints, net2048, sel_endpoints, netts
 
 
 if __name__ == "__main__":
@@ -154,7 +154,8 @@ if __name__ == "__main__":
         # image input
         x_in = tf.placeholder(tf.float32, name="x")
         x_in_reshape = tf.reshape(x_in, [-1, 299, 299, 3])
-        logits, _, end_points, net2048, sel_end_points = inference(x_in_reshape, 2)
+        logits, _, _, _, _, nett = inference(x_in_reshape, 2)
+        pred = tf.nn.softmax(logits, name="prediction")
         # # Restore the moving average version of the learned variables for eval.
         # variable_averages = tf.train.ExponentialMovingAverage(
         #     0.9997)
@@ -167,11 +168,18 @@ if __name__ == "__main__":
             # saver = tf.train.Saver(tf.all_variables(), reshape=True)
             saver.restore(sess, '../model/model.ckpt-31500')
             # x_in = tf.convert_to_tensor(x)
-            net2048_, end_points_, logits_, x_= sess.run([logits, end_points, net2048, x_in_reshape], {x_in: x})
+            logits_, x_, nett_, pred_ = sess.run(
+                [logits, x_in_reshape, nett, pred], {x_in: x})
+            weight = sess.run('logits/logits/weights:0')
+    print(np.shape(logits_))
+    print(np.shape(x_))
+    print(np.shape(nett_))
+    print(np.shape(pred_))
+    print(np.shape(weight))
+    print(pred_)
 
-    print(logits_)
-    print(end_points_)
-    print(net2048_)
+    # CAM(nett, weight, x_, 'CAM', 'test', bs = 100)
+
 
 
 

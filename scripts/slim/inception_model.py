@@ -299,6 +299,7 @@ def inception_v3(inputs,
             branch_pool = ops.conv2d(branch_pool, 192, [1, 1])
           net = tf.concat(axis=3, values=[branch1x1, branch3x3, branch3x3dbl, branch_pool])
           end_points['mixed_8x8x2048a'] = net
+          nett = net
         # mixed_10: 8 x 8 x 2048.
         with tf.variable_scope('mixed_8x8x2048b'):
           with tf.variable_scope('branch1x1'):
@@ -331,7 +332,7 @@ def inception_v3(inputs,
           # 1000
           end_points['logits'] = logits
           end_points['predictions'] = tf.nn.sigmoid(logits, name='predictions')
-      return logits, end_points, net, sel_end_points
+      return logits, end_points, net, sel_end_points, nett
 
 
 def inception_v3_parameters(weight_decay=0.00004, stddev=0.1,
