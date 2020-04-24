@@ -143,8 +143,6 @@ if __name__ == "__main__":
     with tf.Session() as sesss:
         sesss.run(itr.initializer, feed_dict={ph: file})
         x = sesss.run(next_element)
-
-
     # saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
 
     # print(sess.run('logits/logits/weights:0'))
@@ -156,30 +154,20 @@ if __name__ == "__main__":
         x_in_reshape = tf.reshape(x_in, [-1, 299, 299, 3])
         logits, _, _, _, _, nett = inference(x_in_reshape, 2)
         pred = tf.nn.softmax(logits, name="prediction")
-        # # Restore the moving average version of the learned variables for eval.
-        # variable_averages = tf.train.ExponentialMovingAverage(
-        #     0.9997)
-        # variables_to_restore = variable_averages.variables_to_restore()
-        # saver = tf.train.Saver(variables_to_restore)
 
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
-            # saver = tf.train.Saver(tf.all_variables(), reshape=True)
             saver.restore(sess, '../model/model.ckpt-31500')
-            # x_in = tf.convert_to_tensor(x)
-            logits_, x_, nett_, pred_ = sess.run(
-                [logits, x_in_reshape, nett, pred], {x_in: x})
+            x_, nett_, pred_ = sess.run(
+                [x_in_reshape, nett, pred], {x_in: x})
             weight = sess.run('logits/logits/weights:0')
-    print(np.shape(logits_))
+
     print(np.shape(x_))
     print(np.shape(nett_))
     print(np.shape(pred_))
     print(np.shape(weight))
-    print(pred_)
 
-    # CAM(nett, weight, x_, 'CAM', 'test', bs = 100)
-
-
+    CAM(nett_, weight, pred_, x_, 'CAM', 'test', bs=100)
 
 
