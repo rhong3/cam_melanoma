@@ -12,6 +12,7 @@ import cv2
 import tensorflow as tf
 import data_input
 from slim import slim
+import saliency
 from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 
@@ -148,12 +149,16 @@ if __name__ == "__main__":
     # print(sess.run('logits/logits/weights:0'))
     # print_tensors_in_checkpoint_file(file_name='../model/model.ckpt-31500', tensor_name='',
     #                                  all_tensors=False, all_tensor_names=False)
-    with tf.Graph().as_default():
+    graph = tf.Graph()
+    with graph.as_default():
         # image input
         x_in = tf.placeholder(tf.float32, name="x")
         x_in_reshape = tf.reshape(x_in, [-1, 299, 299, 3])
         logits, _, _, _, _, nett = inference(x_in_reshape, 2)
         pred = tf.nn.softmax(logits, name="prediction")
+        ss = graph.get_tensor_by_name('logits/logits/SpatialSqueeze:0')
+        neuron_selector = tf.placeholder(tf.int32)
+        y = ss[0][neuron_selector]
 
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
@@ -162,6 +167,9 @@ if __name__ == "__main__":
             x_, nett_, pred_ = sess.run(
                 [x_in_reshape, nett, pred], {x_in: x})
             weight = sess.run('logits/logits/weights:0')
+            gradient_saliency = saliency.GradientSaliency(graph, sess, y, x_)
+
+
 
     print(np.shape(x_))
     print(np.shape(nett_))
