@@ -169,17 +169,13 @@ if __name__ == "__main__":
                     grad = saliency.IntegratedGradients(graph, sess, y, x_in)
                     # Baseline is a black image.
                     baseline = np.zeros(img.shape)
-                    baseline.fill(-1)
+                    baseline.fill(255)
 
                     xrai_object = saliency.XRAI(graph, sess, y, x_in)
 
                     vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1}, x_steps=25, x_baseline=baseline)
                     smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
                         neuron_selector: 1}, x_steps=25, x_baseline=baseline)
-                    xrai_params = saliency.XRAIParameters()
-                    xrai_params.algorithm = 'fast'
-                    xrai_attributions_fast = xrai_object.GetMask(img, feed_dict={neuron_selector: 1},
-                                                                 extra_parameters=xrai_params)
 
                     # Call the visualization methods to convert the 3D tensors to 2D grayscale.
                     vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
@@ -193,7 +189,7 @@ if __name__ == "__main__":
                     curHeatMap = a * 0.5 + b * 0.5
                     ab = np.hstack((a, b))
                     full = np.hstack((curHeatMap, ab))
-                    cv2.imwrite(str('../Results/VMG/' + aa), full)
+                    cv2.imwrite(str('../Results/VMG_white/' + aa), full)
 
                     smoothgrad_mask_grayscale = im2double(smoothgrad_mask_grayscale)
                     smoothgrad_mask_grayscale = py_map2jpg(smoothgrad_mask_grayscale)
@@ -202,16 +198,7 @@ if __name__ == "__main__":
                     scurHeatMap = sa * 0.5 + sb * 0.5
                     sab = np.hstack((sa, sb))
                     sfull = np.hstack((scurHeatMap, sab))
-                    cv2.imwrite(str('../Results/SMG/' + aa), sfull)
-
-                    mask = xrai_attributions_fast > np.percentile(xrai_attributions_fast, 70)
-                    im_mask = np.array(sa)
-                    im_mask[~mask] = 0
-                    xcurHeatMap = sa * 0.5 + xrai_attributions_fast * 0.5
-                    xab = np.hstack((sa, xrai_attributions_fast))
-                    xabc = np.hstack((xab, xcurHeatMap))
-                    xfull = np.hstack((im_mask, xabc))
-                    cv2.imwrite(str('../Results/XRAI/' + aa), xfull)
+                    cv2.imwrite(str('../Results/SMG_white/' + aa), sfull)
 
     # print(np.shape(x_))
     # print(np.shape(nett_))
