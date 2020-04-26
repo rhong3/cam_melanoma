@@ -154,7 +154,8 @@ if __name__ == "__main__":
         neuron_selector = tf.placeholder(tf.int32)
         y = logits[0][neuron_selector]
 
-        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+        with tf.Session(graph=graph,
+                        config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
             saver.restore(sess, '../model/model.ckpt-31500')
@@ -165,12 +166,16 @@ if __name__ == "__main__":
                     # prediction_class = sess.run(
                     #     [prediction], {x_in: img})[0]
                     # weight = sess.run('logits/logits/weights:0')
-                    guided_backprop = saliency.GuidedBackprop(graph, sess, y, x_in)
+                    grad = saliency.IntegratedGradients(graph, sess, y, x_in)
+                    # Baseline is a black image.
+                    baseline = np.zeros(img.shape)
+                    baseline.fill(-1)
+
                     xrai_object = saliency.XRAI(graph, sess, y, x_in)
 
-                    vanilla_mask_3d = guided_backprop.GetMask(img, feed_dict={neuron_selector: 1})
-                    smoothgrad_mask_3d = guided_backprop.GetSmoothedMask(img, feed_dict={
-                        neuron_selector: 1})
+                    vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1}, x_steps=25, x_baseline=baseline)
+                    smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
+                        neuron_selector: 1}, x_steps=25, x_baseline=baseline)
                     xrai_params = saliency.XRAIParameters()
                     xrai_params.algorithm = 'fast'
                     xrai_attributions_fast = xrai_object.GetMask(img, feed_dict={neuron_selector: 1},
