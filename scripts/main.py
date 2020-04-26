@@ -166,16 +166,16 @@ if __name__ == "__main__":
                     # prediction_class = sess.run(
                     #     [prediction], {x_in: img})[0]
                     # weight = sess.run('logits/logits/weights:0')
-                    grad = saliency.IntegratedGradients(graph, sess, y, x_in)
+                    grad = saliency.GradientSaliency(graph, sess, y, img)
                     # Baseline is a black image.
-                    baseline = np.zeros(img.shape)
-                    baseline.fill(255)
+                    # baseline = np.zeros(img.shape)
+                    # baseline.fill(255)
 
-                    xrai_object = saliency.XRAI(graph, sess, y, x_in)
+                    # xrai_object = saliency.XRAI(graph, sess, y, x_in)
 
-                    vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1}, x_steps=25, x_baseline=baseline)
+                    vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1})
                     smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
-                        neuron_selector: 1}, x_steps=25, x_baseline=baseline)
+                        neuron_selector: 1})
 
                     # Call the visualization methods to convert the 3D tensors to 2D grayscale.
                     vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
@@ -189,7 +189,7 @@ if __name__ == "__main__":
                     curHeatMap = a * 0.5 + b * 0.5
                     ab = np.hstack((a, b))
                     full = np.hstack((curHeatMap, ab))
-                    cv2.imwrite(str('../Results/VMG_white/' + aa), full)
+                    cv2.imwrite(str('../Results/VMG_simple/' + aa), full)
 
                     smoothgrad_mask_grayscale = im2double(smoothgrad_mask_grayscale)
                     smoothgrad_mask_grayscale = py_map2jpg(smoothgrad_mask_grayscale)
@@ -198,7 +198,7 @@ if __name__ == "__main__":
                     scurHeatMap = sa * 0.5 + sb * 0.5
                     sab = np.hstack((sa, sb))
                     sfull = np.hstack((scurHeatMap, sab))
-                    cv2.imwrite(str('../Results/SMG_white/' + aa), sfull)
+                    cv2.imwrite(str('../Results/SMG_simple/' + aa), sfull)
 
     # print(np.shape(x_))
     # print(np.shape(nett_))
