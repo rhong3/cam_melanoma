@@ -166,7 +166,7 @@ if __name__ == "__main__":
                     # prediction_class = sess.run(
                     #     [prediction], {x_in: img})[0]
                     # weight = sess.run('logits/logits/weights:0')
-                    grad = saliency.GradientSaliency(graph, sess, y, img)
+                    grad = saliency.GradientSaliency(graph, sess, y, x_in)
                     # Baseline is a black image.
                     # baseline = np.zeros(img.shape)
                     # baseline.fill(255)
