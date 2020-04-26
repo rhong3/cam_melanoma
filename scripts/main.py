@@ -13,6 +13,7 @@ import tensorflow as tf
 import data_input
 from slim import slim
 import saliency
+from matplotlib import pylab as P
 from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 
@@ -137,13 +138,6 @@ def inference(images, num_classes, for_training=False, restore_logits=True,
 
 
 if __name__ == "__main__":
-    filename = '../Results/test.tfrecords'
-    datasets = data_input.DataSet(100, filename=filename)
-    itr, file, ph = datasets.data()
-    next_element = itr.get_next()
-    with tf.Session() as sesss:
-        sesss.run(itr.initializer, feed_dict={ph: file})
-        x = sesss.run(next_element)
     # saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
 
     # print(sess.run('logits/logits/weights:0'))
@@ -156,26 +150,69 @@ if __name__ == "__main__":
         x_in_reshape = tf.reshape(x_in, [-1, 299, 299, 3])
         logits, _, _, _, _, nett = inference(x_in_reshape, 2)
         pred = tf.nn.softmax(logits, name="prediction")
-        ss = graph.get_tensor_by_name('logits/logits/SpatialSqueeze:0')
+        # prediction = tf.argmax(logits, 1)
         neuron_selector = tf.placeholder(tf.int32)
-        y = ss[0][neuron_selector]
+        y = logits[0][neuron_selector]
 
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
             saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
             saver.restore(sess, '../model/model.ckpt-31500')
-            x_, nett_, pred_ = sess.run(
-                [x_in_reshape, nett, pred], {x_in: x})
-            weight = sess.run('logits/logits/weights:0')
-            gradient_saliency = saliency.GradientSaliency(graph, sess, y, x_)
+            for aa in os.listdir('../top_100_tiles'):
+                if 'jpeg' in aa:
+                    img = cv2.imread(str('../top_100_tiles/' + aa))
+                    img = img.astype(np.float32)
+                    # prediction_class = sess.run(
+                    #     [prediction], {x_in: img})[0]
+                    # weight = sess.run('logits/logits/weights:0')
+                    guided_backprop = saliency.GuidedBackprop(graph, sess, y, x_in)
+                    xrai_object = saliency.XRAI(graph, sess, y, x_in)
 
+                    vanilla_mask_3d = guided_backprop.GetMask(img, feed_dict={neuron_selector: 1})
+                    smoothgrad_mask_3d = guided_backprop.GetSmoothedMask(img, feed_dict={
+                        neuron_selector: 1})
+                    xrai_params = saliency.XRAIParameters()
+                    xrai_params.algorithm = 'fast'
+                    xrai_attributions_fast = xrai_object.GetMask(img, feed_dict={neuron_selector: 1},
+                                                                 extra_parameters=xrai_params)
 
+                    # Call the visualization methods to convert the 3D tensors to 2D grayscale.
+                    vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
+                    smoothgrad_mask_grayscale = saliency.VisualizeImageGrayscale(smoothgrad_mask_3d)
 
-    print(np.shape(x_))
-    print(np.shape(nett_))
-    print(np.shape(pred_))
-    print(np.shape(weight))
+                    print(aa)
+                    vanilla_mask_grayscale = im2double(vanilla_mask_grayscale)
+                    vanilla_mask_grayscale = py_map2jpg(vanilla_mask_grayscale)
+                    a = im2double(img) * 255
+                    b = im2double(vanilla_mask_grayscale) * 255
+                    curHeatMap = a * 0.5 + b * 0.5
+                    ab = np.hstack((a, b))
+                    full = np.hstack((curHeatMap, ab))
+                    cv2.imwrite(str('../Results/VMG/' + aa), full)
 
-    CAM(nett_, weight, pred_, x_, 'CAM', 'test', bs=100)
+                    smoothgrad_mask_grayscale = im2double(smoothgrad_mask_grayscale)
+                    smoothgrad_mask_grayscale = py_map2jpg(smoothgrad_mask_grayscale)
+                    sa = im2double(img) * 255
+                    sb = im2double(smoothgrad_mask_grayscale) * 255
+                    scurHeatMap = sa * 0.5 + sb * 0.5
+                    sab = np.hstack((sa, sb))
+                    sfull = np.hstack((scurHeatMap, sab))
+                    cv2.imwrite(str('../Results/SMG/' + aa), sfull)
+
+                    mask = xrai_attributions_fast > np.percentile(xrai_attributions_fast, 70)
+                    im_mask = np.array(sa)
+                    im_mask[~mask] = 0
+                    xcurHeatMap = sa * 0.5 + xrai_attributions_fast * 0.5
+                    xab = np.hstack((sa, xrai_attributions_fast))
+                    xabc = np.hstack((xab, xcurHeatMap))
+                    xfull = np.hstack((im_mask, xabc))
+                    cv2.imwrite(str('../Results/XRAI/' + aa), xfull)
+
+    # print(np.shape(x_))
+    # print(np.shape(nett_))
+    # print(np.shape(pred_))
+    # print(np.shape(weight))
+
+    # CAM(nett_, weight, pred_, x_, 'CAM', 'test', bs=100)
 
 
