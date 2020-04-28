@@ -171,8 +171,6 @@ if __name__ == "__main__":
                     # baseline = np.zeros(img.shape)
                     # baseline.fill(255)
 
-                    # xrai_object = saliency.XRAI(graph, sess, y, x_in)
-
                     vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1})
                     smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
                         neuron_selector: 1})
