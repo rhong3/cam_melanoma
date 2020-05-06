@@ -157,46 +157,54 @@ if __name__ == "__main__":
         with tf.Session(graph=graph,
                         config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
-            saver = tf.train.import_meta_graph('../model/model.ckpt-31500.meta')
-            saver.restore(sess, '../model/model.ckpt-31500')
-            for aa in os.listdir('../top_100_tiles'):
-                if 'jpeg' in aa:
-                    img = cv2.imread(str('../top_100_tiles/' + aa))
-                    img = img.astype(np.float32)
-                    # prediction_class = sess.run(
-                    #     [prediction], {x_in: img})[0]
-                    # weight = sess.run('logits/logits/weights:0')
-                    grad = saliency.IntegratedGradients(graph, sess, y, x_in)
-                    # Baseline is a white image.
-                    baseline = np.zeros(img.shape)
-                    baseline.fill(255)
+            saver = tf.train.import_meta_graph('../cam_melanoma_transfer/model/model.ckpt-150000.meta')
+            saver.restore(sess, '../cam_melanoma_transfer/model/model.ckpt-150000')
+            for dirr in ['bottom_100_tiles_transfer', 'bottom_100_tiles_transfer_TCGA',
+                         'top_100_tiles_transfer', 'top_100_tiles_transfer_TCGA']:
+                dirpath = str("../cam_melanoma_transfer/Results/"+dirr)
+                try:
+                    os.mkdir(dirpath)
+                except FileExistsError:
+                    pass
+                for aa in os.listdir(str("../cam_melanoma_transfer/"+dirr)):
+                    if 'jpeg' in aa:
+                        img = cv2.imread(str("../cam_melanoma_transfer/"+dirr + '/' + aa))
+                        img = img.astype(np.float32)
+                        # prediction_class = sess.run(
+                        #     [prediction], {x_in: img})[0]
+                        # weight = sess.run('logits/logits/weights:0')
+                        grad = saliency.IntegratedGradients(graph, sess, y, x_in)
+                        # Baseline is a white image.
+                        baseline = np.zeros(img.shape)
+                        baseline.fill(255)
 
-                    vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1}, x_steps=25, x_baseline=baseline)
-                    smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
-                        neuron_selector: 1}, x_steps=25, x_baseline=baseline)
+                        # vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1},
+                        #                                x_steps=25, x_baseline=baseline)
+                        smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
+                            neuron_selector: 1}, x_steps=25, x_baseline=baseline)
 
-                    # Call the visualization methods to convert the 3D tensors to 2D grayscale.
-                    vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
-                    smoothgrad_mask_grayscale = saliency.VisualizeImageGrayscale(smoothgrad_mask_3d)
+                        # Call the visualization methods to convert the 3D tensors to 2D grayscale.
+                        # vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
+                        smoothgrad_mask_grayscale = saliency.VisualizeImageGrayscale(smoothgrad_mask_3d)
 
-                    print(aa)
-                    vanilla_mask_grayscale = im2double(vanilla_mask_grayscale)
-                    vanilla_mask_grayscale = py_map2jpg(vanilla_mask_grayscale)
-                    a = im2double(img) * 255
-                    b = im2double(vanilla_mask_grayscale) * 255
-                    curHeatMap = a * 0.5 + b * 0.5
-                    ab = np.hstack((a, b))
-                    full = np.hstack((curHeatMap, ab))
-                    cv2.imwrite(str('../Results/VMG_white/' + aa), full)
+                        print(aa)
+                        # vanilla_mask_grayscale = im2double(vanilla_mask_grayscale)
+                        # vanilla_mask_grayscale = py_map2jpg(vanilla_mask_grayscale)
+                        # a = im2double(img) * 255
+                        # b = im2double(vanilla_mask_grayscale) * 255
+                        # curHeatMap = a * 0.5 + b * 0.5
+                        # ab = np.hstack((a, b))
+                        # full = np.hstack((curHeatMap, ab))
+                        # cv2.imwrite(str(dirpath + '/' + aa), full)
 
-                    smoothgrad_mask_grayscale = im2double(smoothgrad_mask_grayscale)
-                    smoothgrad_mask_grayscale = py_map2jpg(smoothgrad_mask_grayscale)
-                    sa = im2double(img) * 255
-                    sb = im2double(smoothgrad_mask_grayscale) * 255
-                    scurHeatMap = sa * 0.5 + sb * 0.5
-                    sab = np.hstack((sa, sb))
-                    sfull = np.hstack((scurHeatMap, sab))
-                    cv2.imwrite(str('../Results/SMG_white/' + aa), sfull)
+                        smoothgrad_mask_grayscale = im2double(smoothgrad_mask_grayscale)
+                        smoothgrad_mask_grayscale = py_map2jpg(smoothgrad_mask_grayscale)
+                        sa = im2double(img) * 255
+                        sb = im2double(smoothgrad_mask_grayscale) * 255
+                        scurHeatMap = sa * 0.5 + sb * 0.5
+                        sab = np.hstack((sa, sb))
+                        sfull = np.hstack((scurHeatMap, sab))
+                        cv2.imwrite(str(dirpath + '/' + aa), sfull)
 
     # print(np.shape(x_))
     # print(np.shape(nett_))
