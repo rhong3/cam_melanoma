@@ -12,7 +12,7 @@ import cv2
 import tensorflow as tf
 import data_input
 from slim import slim
-import saliency
+import saliency.tf1 as saliency
 from matplotlib import pylab as P
 from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
@@ -157,31 +157,31 @@ if __name__ == "__main__":
         with tf.Session(graph=graph,
                         config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
-            saver = tf.train.import_meta_graph('../cam_melanoma_transfer/model/model.ckpt-150000.meta')
-            saver.restore(sess, '../cam_melanoma_transfer/model/model.ckpt-150000')
-            for dirr in ['bottom_100_tiles_transfer', 'bottom_100_tiles_transfer_TCGA',
-                         'top_100_tiles_transfer', 'top_100_tiles_transfer_TCGA']:
-                dirpath = str("../cam_melanoma_transfer/Results/"+dirr)
+            saver = tf.train.import_meta_graph('../tiles_for_saliency/model.ckpt-19500.meta')
+            saver.restore(sess, '../tiles_for_saliency/model.ckpt-19500')
+            for dirr in ['top_200_NYU', 'top_200_TCGA',
+                         'bottom_200_NYU', 'bottom_200_TCGA']:
+                dirpath = str("../tiles_for_saliency/Results/"+dirr)
                 try:
                     os.mkdir(dirpath)
                 except FileExistsError:
                     pass
-                for aa in os.listdir(str("../cam_melanoma_transfer/"+dirr)):
+                for aa in os.listdir(str("../tiles_for_saliency/"+dirr)):
                     if 'jpeg' in aa:
-                        img = cv2.imread(str("../cam_melanoma_transfer/"+dirr + '/' + aa))
+                        img = cv2.imread(str("../tiles_for_saliency/"+dirr + '/' + aa))
                         img = img.astype(np.float32)
                         # prediction_class = sess.run(
                         #     [prediction], {x_in: img})[0]
                         # weight = sess.run('logits/logits/weights:0')
-                        grad = saliency.IntegratedGradients(graph, sess, y, x_in)
+                        grad = saliency.IntegratedGradients(graph, sess, y, x_in_reshape)
                         # Baseline is a white image.
                         baseline = np.zeros(img.shape)
                         baseline.fill(255)
 
                         # vanilla_mask_3d = grad.GetMask(img, feed_dict={neuron_selector: 1},
-                        #                                x_steps=25, x_baseline=baseline)
+                        #                                x_stepIntegratedGradientss=25, x_baseline=baseline)
                         smoothgrad_mask_3d = grad.GetSmoothedMask(img, feed_dict={
-                            neuron_selector: 1}, x_steps=25, x_baseline=baseline)
+                            neuron_selector: 1}, x_steps=5, x_baseline=baseline, batch_size=1)
 
                         # Call the visualization methods to convert the 3D tensors to 2D grayscale.
                         # vanilla_mask_grayscale = saliency.VisualizeImageGrayscale(vanilla_mask_3d)
