@@ -167,7 +167,7 @@ if __name__ == "__main__":
                 except FileExistsError:
                     pass
                 for aa in os.listdir(str("../tiles_for_saliency/"+dirr)):
-                    if 'jpeg' in aa:
+                    if 'jpeg' in aa and aa not in os.listdir(str("../tiles_for_saliency/Results/"+dirr)):
                         img = cv2.imread(str("../tiles_for_saliency/"+dirr + '/' + aa))
                         img = img.astype(np.float32)
                         # prediction_class = sess.run(
