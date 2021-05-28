@@ -43,56 +43,56 @@ def py_map2jpg(imgmap):
     return cv2.applyColorMap(heatmap_x, cv2.COLORMAP_JET)
 
 
-# CAM for real test; no need to determine correct or wrong
-def CAM(net, w, pred, x, path, name, bs, rd=0):
-    DIRR = "../Results/{}/out/{}_img".format(path, name)
-    rd = rd * bs
-
-    try:
-        os.mkdir(DIRR)
-    except(FileExistsError):
-        pass
-
-    pdx = np.asmatrix(pred)
-
-    prl = pdx.argmax(axis=1).astype('uint8')
-
-    for ij in range(len(prl)):
-        id = str(ij + rd)
-        weights_LR = w
-        activation_lastconv = np.array([net[ij]])
-        weights_LR = weights_LR.T
-        activation_lastconv = activation_lastconv.T
-
-        topNum = 1  # generate heatmap for top X prediction results
-        curCAMmapAll = py_returnCAMmap(activation_lastconv, weights_LR[[1], :])
-        for kk in range(topNum):
-            curCAMmap_crops = curCAMmapAll[:, :, kk]
-            curCAMmapLarge_crops = cv2.resize(curCAMmap_crops, (299, 299))
-            curHeatMap = cv2.resize(im2double(curCAMmapLarge_crops), (299, 299))  # this line is not doing much
-            curHeatMap = im2double(curHeatMap)
-            curHeatMap = py_map2jpg(curHeatMap)
-            xim = x[ij].reshape(-1, 3)
-            xim1 = xim[:, 0].reshape(-1, 299)
-            xim2 = xim[:, 1].reshape(-1, 299)
-            xim3 = xim[:, 2].reshape(-1, 299)
-            image = np.empty([299, 299, 3])
-            image[:, :, 0] = xim1
-            image[:, :, 1] = xim2
-            image[:, :, 2] = xim3
-            a = im2double(image) * 255
-            b = im2double(curHeatMap) * 255
-            curHeatMap = a * 0.6 + b * 0.4
-            ab = np.hstack((a, b))
-            full = np.hstack((curHeatMap, ab))
-            # imname = DIRR + '/' + id + '.png'
-            # imname1 = DIRR + '/' + id + '_img.png'
-            # imname2 = DIRR + '/' + id +'_hm.png'
-            imname3 = DIRR + '/' + id + '_full.png'
-            # cv2.imwrite(imname, curHeatMap)
-            # cv2.imwrite(imname1, a)
-            # cv2.imwrite(imname2, b)
-            cv2.imwrite(imname3, full)
+# # CAM for real test; no need to determine correct or wrong
+# def CAM(net, w, pred, x, path, name, bs, rd=0):
+#     DIRR = "../Results/{}/out/{}_img".format(path, name)
+#     rd = rd * bs
+#
+#     try:
+#         os.mkdir(DIRR)
+#     except(FileExistsError):
+#         pass
+#
+#     pdx = np.asmatrix(pred)
+#
+#     prl = pdx.argmax(axis=1).astype('uint8')
+#
+#     for ij in range(len(prl)):
+#         id = str(ij + rd)
+#         weights_LR = w
+#         activation_lastconv = np.array([net[ij]])
+#         weights_LR = weights_LR.T
+#         activation_lastconv = activation_lastconv.T
+#
+#         topNum = 1  # generate heatmap for top X prediction results
+#         curCAMmapAll = py_returnCAMmap(activation_lastconv, weights_LR[[1], :])
+#         for kk in range(topNum):
+#             curCAMmap_crops = curCAMmapAll[:, :, kk]
+#             curCAMmapLarge_crops = cv2.resize(curCAMmap_crops, (299, 299))
+#             curHeatMap = cv2.resize(im2double(curCAMmapLarge_crops), (299, 299))  # this line is not doing much
+#             curHeatMap = im2double(curHeatMap)
+#             curHeatMap = py_map2jpg(curHeatMap)
+#             xim = x[ij].reshape(-1, 3)
+#             xim1 = xim[:, 0].reshape(-1, 299)
+#             xim2 = xim[:, 1].reshape(-1, 299)
+#             xim3 = xim[:, 2].reshape(-1, 299)
+#             image = np.empty([299, 299, 3])
+#             image[:, :, 0] = xim1
+#             image[:, :, 1] = xim2
+#             image[:, :, 2] = xim3
+#             a = im2double(image) * 255
+#             b = im2double(curHeatMap) * 255
+#             curHeatMap = a * 0.6 + b * 0.4
+#             ab = np.hstack((a, b))
+#             full = np.hstack((curHeatMap, ab))
+#             # imname = DIRR + '/' + id + '.png'
+#             # imname1 = DIRR + '/' + id + '_img.png'
+#             # imname2 = DIRR + '/' + id +'_hm.png'
+#             imname3 = DIRR + '/' + id + '_full.png'
+#             # cv2.imwrite(imname, curHeatMap)
+#             # cv2.imwrite(imname1, a)
+#             # cv2.imwrite(imname2, b)
+#             cv2.imwrite(imname3, full)
 
 
 def inference(images, num_classes, for_training=False, restore_logits=True,
