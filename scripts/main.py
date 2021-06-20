@@ -157,8 +157,8 @@ if __name__ == "__main__":
         with tf.Session(graph=graph,
                         config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
             tf.global_variables_initializer().run()
-            saver = tf.train.import_meta_graph('../tiles_for_saliency/model.ckpt-19500.meta')
-            saver.restore(sess, '../tiles_for_saliency/model.ckpt-19500')
+            saver = tf.train.import_meta_graph('../tiles_for_saliency/model.ckpt-99000.meta')
+            saver.restore(sess, '../tiles_for_saliency/model.ckpt-99000')
             for dirr in ['top_200_NYU', 'top_200_TCGA',
                          'bottom_200_NYU', 'bottom_200_TCGA']:
                 dirpath = str("../tiles_for_saliency/Results/"+dirr)
